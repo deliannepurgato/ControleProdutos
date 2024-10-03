@@ -1,0 +1,107 @@
+import tkinter as tk
+from tkinter import messagebox
+import csv
+import os
+
+# Função para adicionar compra
+def adicionar_compra():
+    nome_item = entrada_item.get()
+    quantidade = entrada_quantidade.get()
+    preco = entrada_preco.get()
+    
+    if nome_item and quantidade and preco:
+        try:
+            quantidade = int(quantidade)
+            preco = float(preco)
+            total = quantidade * preco
+            lista_compras.insert(tk.END, f"{nome_item} - Quantidade: {quantidade} - Preço: R$ {preco:.2f} - Total: R$ {total:.2f}")
+            calcular_total()
+            limpar_entradas()
+        except ValueError:
+            messagebox.showerror("Erro", "Por favor, insira valores válidos para quantidade e preço.")
+    else:
+        messagebox.showerror("Erro", "Por favor, preencha todos os campos.")
+
+# Função para calcular o total gasto
+def calcular_total():
+    total_gasto = 0
+    for i in range(lista_compras.size()):
+        item = lista_compras.get(i)
+        total_str = item.split("Total: R$ ")[-1]
+        total_gasto += float(total_str)
+    
+    label_total.config(text=f"Total Gasto: R$ {total_gasto:.2f}")
+
+# Função para limpar entradas
+def limpar_entradas():
+    entrada_item.delete(0, tk.END)
+    entrada_quantidade.delete(0, tk.END)
+    entrada_preco.delete(0, tk.END)
+
+# Função para salvar as compras em um arquivo CSV
+def salvar_compras():
+    with open("compras.csv", "w", newline="") as arquivo_csv:
+        escritor = csv.writer(arquivo_csv)
+        escritor.writerow(["Item", "Quantidade", "Preço", "Total"])
+        for i in range(lista_compras.size()):
+            item = lista_compras.get(i)
+            partes = item.split(" - ")
+            nome_item = partes[0]
+            quantidade = partes[1].split(": ")[1]
+            preco = partes[2].split(": ")[1].replace("R$ ", "")
+            total = partes[3].split(": ")[1].replace("R$ ", "")
+            escritor.writerow([nome_item, quantidade, preco, total])
+    
+    messagebox.showinfo("Sucesso", "Compras salvas em compras.csv")
+
+# Função para carregar compras de um arquivo CSV
+def carregar_compras():
+    if os.path.exists("compras.csv"):
+        lista_compras.delete(0, tk.END)
+        with open("compras.csv", newline="") as arquivo_csv:
+            leitor = csv.reader(arquivo_csv)
+            next(leitor)  # Pular o cabeçalho
+            for linha in leitor:
+                nome_item, quantidade, preco, total = linha
+                lista_compras.insert(tk.END, f"{nome_item} - Quantidade: {quantidade} - Preço: R$ {preco} - Total: R$ {total}")
+        calcular_total()
+    else:
+        messagebox.showerror("Erro", "Nenhum arquivo de compras encontrado.")
+
+# Interface gráfica
+app = tk.Tk()
+app.title("Controle de Compras do Mês")
+
+# Entradas de dados
+tk.Label(app, text="Item:").pack()
+entrada_item = tk.Entry(app)
+entrada_item.pack()
+
+tk.Label(app, text="Quantidade:").pack()
+entrada_quantidade = tk.Entry(app)
+entrada_quantidade.pack()
+
+tk.Label(app, text="Preço (R$):").pack()
+entrada_preco = tk.Entry(app)
+entrada_preco.pack()
+
+# Botão para adicionar compra
+botao_adicionar = tk.Button(app, text="Adicionar Compra", command=adicionar_compra)
+botao_adicionar.pack()
+
+# Lista de compras
+lista_compras = tk.Listbox(app, width=50)
+lista_compras.pack()
+
+# Total gasto
+label_total = tk.Label(app, text="Total Gasto: R$ 0.00")
+label_total.pack()
+
+# Botões para salvar e carregar compras
+botao_salvar = tk.Button(app, text="Salvar Compras", command=salvar_compras)
+botao_salvar.pack()
+
+botao_carregar = tk.Button(app, text="Carregar Compras", command=carregar_compras)
+botao_carregar.pack()
+
+app.mainloop()
